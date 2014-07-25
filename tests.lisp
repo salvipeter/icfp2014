@@ -1,0 +1,80 @@
+;;; Sample programs and their expansions (by hand)
+
+;;; local.gcc
+(gcc (body 21)
+     (return)
+     (def body (x)
+       (+ x x)))
+
+;;; expansion:
+(progn
+  (gcc-ldc 21)
+  (gcc-ldf (gcc-lookup 'body))
+  (gcc-ap 1)
+  (gcc-rtn)
+  (gcc-def 'body '(x))
+  (gcc-ld (gcc-lookup 'x))
+  (gcc-ld (gcc-lookup 'x))
+  (gcc-add)
+  (gcc-rtn))
+
+;;; goto.gcc
+(gcc (let ((go (n) (to (+ n 1)))
+           (to (n) (go (- n 1))))
+       (go 1))
+     (return))
+
+;;; expansion:
+(progn
+  (gcc-dum 2)
+  (gcc-ldf (gcc-lookup #:go12))
+  (gcc-ldf (gcc-lookup #:to34))
+  (gcc-ldf (gcc-lookup #:let56))
+  (gcc-rap 2)
+  (gcc-rtn)
+  (gcc-def #:let56 '(go to))
+  (gcc-ldc 1)
+  (gcc-ld (gcc-lookup 'go))
+  (gcc-ap 1)
+  (gcc-rtn)
+  (gcc-def #:go12 '(n))
+  (gcc-ld (gcc-lookup 'n))
+  (gcc-ldc 1)
+  (gcc-add)
+  (gcc-ld (gcc-lookup 'to))
+  (gcc-ap 1)
+  (gcc-rtn)
+  (gcc-def #:to34 '(n))
+  (gcc-ld (gcc-lookup 'n))
+  (gcc-ldc 1)
+  (gcc-sub)
+  (gcc-ld (gcc-lookup 'go))
+  (gcc-ap 1)
+  (gcc-rtn))
+
+;;; down.gcc
+(gcc (let ((dir +down+)
+           (step (s) (cons (+ s 1) dir)))
+       (cons 42 step))
+     (return))
+
+;;; expansion:
+(progn
+  (gcc-dum 2)
+  (gcc-ldc 2)
+  (gcc-ldf (gcc-lookup #:step12))
+  (gcc-ldf (gcc-lookup #:let34))
+  (gcc-rap 2)
+  (gcc-rtn)
+  (gcc-def #:let34 '(dir step))
+  (gcc-ldc 42)
+  (gcc-ld (gcc-lookup 'step))
+  (gcc-cons)
+  (gcc-rtn)
+  (gcc-def #:step12 '(s))
+  (gcc-ld (gcc-lookup 's))
+  (gcc-ldc 1)
+  (gcc-add)
+  (gcc-ld (gcc-lookup 'dir))
+  (gcc-cons)
+  (gcc-rtn))

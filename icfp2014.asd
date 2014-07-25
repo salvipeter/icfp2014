@@ -2,5 +2,6 @@
 
 (asdf:defsystem :icfp2014
   :serial t
-  :components ((:file "package"))
+  :components ((:file "package")
+               (:file "gcc" :depends-on ("package")))
   :depends-on (:iterate :alexandria))
