@@ -27,7 +27,7 @@
               (+ (if (< (cdr v) +lambda-man-start+) (* (cdr v) 10) 0)
                  (+ (if (and (= (cdr v) +fruit-pos+) (> fruit 0)) 100 0)
                     (let ((d (reduce min (ghost-distances ghosts xy))))
-                      (/ size (* d (if (> (car lman) 0) 1 -1))))))))
+                      (safe-/ size (* d (if (> (car lman) 0) 1 -1))))))))
          (next-step (car (reduce (lambda (a b)
                                    (if (> (evaluate-dir a) (evaluate-dir b)) a b))
                                  good-dirs))))
@@ -65,6 +65,11 @@
           (if (= dir +up+)
               (up xy)
               (down xy)))))
+
+(def safe-/ (a b)
+  (if (= b 0)
+      0
+      (/ a b)))
 
 (def < (a b)
   (> b a))
