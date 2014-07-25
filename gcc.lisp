@@ -10,33 +10,40 @@
   :test 'equal)
 
 ;;; Instructions
-;;; LDC  - load constant
-;;; LD   - load from environment
-;;; ADD  - integer addition
-;;; SUB  - integer subtraction
-;;; MUL  - integer multiplication
-;;; DIV  - integer division
-;;; CEQ  - compare equal
-;;; CGT  - compare greater than
-;;; CGTE - compare greater than or equal
-;;; ATOM - test if value is an integer
-;;; CONS - allocate a CONS cell
-;;; CAR  - extract first element from CONS cell
-;;; CDR  - extract second element from CONS cell
-;;; SEL  - conditional branch
-;;; JOIN - return from branch
-;;; LDF  - load function
-;;; AP   - call function
-;;; RTN  - return from function call
-;;; DUM  - create empty environment frame
-;;; RAP  - recursive environment call function
-;;; STOP - terminate co-processor execution [use RTN instead]
-;;; TSEL - tail-call conditional branch
-;;; TAP  - tail-call function
-;;; TRAP - recursive environment tail-call function
-;;; ST   - store to environment
-;;; DBUG - printf debugging
-;;; BRK  - breakpoint debugging
+
+(defmacro definstr (name str)
+  (let ((sym (intern (format nil "GCC-~a" name))))
+    `(defun ,sym (&rest args)
+       ,str
+       (format t "~:@(~a~)~{~^ ~a~}~%" ',name args))))
+
+(definstr ldc "Load constant")
+(definstr ld "Load from environment")
+(definstr add "Integer addition")
+(definstr sub "Integer subtraction")
+(definstr mul "Integer multiplication")
+(definstr div "Integer division")
+(definstr ceq "Compare equal")
+(definstr cgt "Compare greater than")
+(definstr cgte "Compare greater than or equal")
+(definstr atom "Test if value is an integer")
+(definstr cons "Allocate a CONS cell")
+(definstr car "Extract first element from CONS cell")
+(definstr cdr "Extract second element from CONS cell")
+(definstr sel "Conditional branch")
+(definstr join "Return from branch")
+(definstr ldf "Load function")
+(definstr ap "Call function")
+(definstr rtn "Return from function call")
+(definstr dum "Create empty environment frame")
+(definstr rap "Recursive environment call function")
+(definstr stop "Terminate co-processor execution [use RTN instead]")
+(definstr tsel "Tail-call conditional branch")
+(definstr tap "Tail-call function")
+(definstr trap "Recursive environment tail-call function")
+(definstr st "Store to environment")
+(definstr dbug "Printf debugging")
+(definstr brk "Breakpoint debugging")
 
 
 ;;; Transformators
@@ -57,9 +64,9 @@
               (for j upfrom 0)
               (when (eq symbol var)
                 (return-from gcc-lookup `((gcc-ld ,i ,j))))))
-  `((gcc-ldf ',symbol)))
+  `((gcc-ldf ,symbol)))
 
-(defun gcc-atom (expr env)
+(defun gcc-number-or-constant (expr env)
   (let ((str (format nil "~a" expr)))
     (if (char= (char str 0) (char str (1- (length str))) #\+)
         (let* ((sym (intern (subseq str 1 (1- (length str)))))
@@ -91,18 +98,18 @@
                   (appending (gcc-transform (second letexpr) new-env))
                   ;; function
                   (appending (gcc-lookup var env))))
-      (gcc-ldf ',let-symbol)
+      (gcc-ldf ,let-symbol)
       (gcc-rap ,n))))
 
 (defun gcc-transform (expr env)
   (cond ((numberp expr)
          `((gcc-ldc ,expr)))
         ((atom expr)
-         (gcc-atom expr env))
+         (gcc-number-or-constant expr env))
         (t (case (first expr)
              (return '((gcc-rtn)))
              (def (let ((new-env (cons (third expr) env)))
-                    `((gcc-label ',(second expr))
+                    `((gcc-label ,(second expr))
                       ,@(gcc-seq (nthcdr 3 expr) new-env)
                       (gcc-rtn))))
              (let (gcc-let expr env))
@@ -115,12 +122,31 @@
                   ,@(gcc-lookup (first expr) env)
                   (gcc-ap ,(1- (length expr)))))))))
 
+(defmacro gcc-postprocess (&body exprs)
+  "TODO: Uses the gensyms' textual representation as a key,
+as genysms are not EQ to themselves..."
+  (let ((addrs (make-hash-table :test 'equal)))
+    (iter (for i first 0 then (if labelp i (1+ i)))
+          (for expr in exprs)
+          (for labelp = (eq (first expr) 'gcc-label))
+          (when labelp
+            (setf (gethash (format nil "~a" (second expr)) addrs) i)))
+    `(progn
+       ,@(iter (for expr in exprs)
+               (cond ((eq (first expr) 'gcc-label) nil)
+                     ((eq (first expr) 'gcc-ldf)
+                      (let ((line (gethash (format nil "~a" (second expr)) addrs)))
+                        (if line
+                            (collect `(gcc-ldf ,line))
+                            (error "Unknown label: ~a" (second expr)))))
+                     (t (collect expr)))))))
+
 
 ;;; Top-level macro
 
 (defmacro gcc (&body body)
   (setf *appendices* '())
-  `(progn
+  `(gcc-postprocess
      ,@(iter (for expr in body)
              (appending (gcc-transform expr '(()))))
      ,@(reduce #'append *appendices*)))
