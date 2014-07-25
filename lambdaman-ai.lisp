@@ -9,7 +9,7 @@
 
 ;;; GCC code starts
 
-(cons 0 step)
+(cons -1 step)
 (return)
 
 (def step (back-dir world)
@@ -18,20 +18,30 @@
          (ghosts (caddr world))
          (fruit (cdddr world))
          (xy (cadr lman))
+         (size (map-size map))
          (dirs (cons +left+ (cons +right+ (cons +up+ (cons +down+ 0)))))
          (candidates (mapcar (lambda (dir) (cons dir (cell map (movement xy dir)))) dirs))
-         (good-dirs (remove-if-not (lambda (v)
-                                     (and (> (cdr v) +wall+)
-                                          (/= (car v) back-dir)))
-                                   candidates))
+         (good-dirs (remove-if-not (lambda (v) (> (cdr v) +wall+)) candidates))
+         (evaluate-dir (v)
+           (+ (if (= (car v) back-dir) -5 0)
+              (+ (if (< (cdr v) +lambda-man-start+) (* (cdr v) 10) 0)
+                 (+ (if (and (= (cdr v) +fruit-pos+) (> fruit 0)) 100 0)
+                    (let ((d (reduce min (ghost-distances ghosts xy))))
+                      (/ size (* d (if (> (car lman) 0) 1 -1))))))))
          (next-step (car (reduce (lambda (a b)
-                                   (if (and (> (cdr a) (cdr b))
-                                            (< (cdr a) +lambda-man-start+))
-                                       a
-                                       b))
+                                   (if (> (evaluate-dir a) (evaluate-dir b)) a b))
                                  good-dirs))))
     (cons (reverse-dir next-step) next-step)))
 
+(def ghost-distances (ghosts xy)
+  (mapcar (lambda (g) (distance (cadr g) xy)) ghosts))
+(def distance (a b)
+  (let ((dx (- (car b) (car a)))
+        (dy (- (cdr b) (cdr b))))
+    (+ dx dy)))
+
+(def map-size (map)
+  (* (length map) (length (car map))))
 (def cell (map xy)
   (nth (car xy) (nth (cdr xy) map)))
 
@@ -63,6 +73,9 @@
 (def /= (a b)
   (not (= a b)))
 
+(def min (a b) (if (> b a) a b))
+(def max (a b) (if (> a b) a b))
+
 (def and (a b)
   (* a b))
 (def not (a)
@@ -79,6 +92,10 @@
 (def cdddr (lst)
   (cdr (cdr (cdr lst))))
 
+(def length (lst)
+  (if (atom lst)
+      0
+      (+ (length (cdr lst)) 1)))
 (def nth (n lst)
   (if (= n 0)
       (car lst)
