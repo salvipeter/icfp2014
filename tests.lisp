@@ -1,4 +1,4 @@
-;;; Sample programs and their expansions (by hand)
+;;; Sample programs
 
 ;;; local.gcc
 (gcc (body 21)
@@ -6,51 +6,11 @@
      (def body (x)
        (+ x x)))
 
-;;; expansion:
-(progn
-  (gcc-ldc 21)
-  (gcc-ldf 'body)
-  (gcc-ap 1)
-  (gcc-rtn)
-  (gcc-label 'body)
-  (gcc-ld 0 0)
-  (gcc-ld 0 0)
-  (gcc-add)
-  (gcc-rtn))
-
 ;;; goto.gcc
 (gcc (let ((go (n) (to (+ n 1)))
            (to (n) (go (- n 1))))
        (go 1))
      (return))
-
-;;; expansion:
-(progn
-  (gcc-dum 2)
-  (gcc-ldf '#:go12)
-  (gcc-ldf '#:to34)
-  (gcc-ldf '#:let56)
-  (gcc-rap 2)
-  (gcc-rtn)
-  (gcc-label #:let56)
-  (gcc-ldc 1)
-  (gcc-ld 0 0)
-  (gcc-ap 1)
-  (gcc-rtn)
-  (gcc-label #:go12)
-  (gcc-ld 0 0)
-  (gcc-ldc 1)
-  (gcc-add)
-  (gcc-ld 1 1)
-  (gcc-ap 1)
-  (gcc-rtn)
-  (gcc-label #:to34)
-  (gcc-ld 0 0)
-  (gcc-ldc 1)
-  (gcc-sub)
-  (gcc-ld 1 0)
-  (gcc-ap 1)
-  (gcc-rtn))
 
 ;;; down.gcc
 (gcc (let ((dir +down+)
@@ -58,23 +18,8 @@
        (cons 42 step))
      (return))
 
-;;; expansion:
-(progn
-  (gcc-dum 2)
-  (gcc-ldc 2)
-  (gcc-ldf '#:step12)
-  (gcc-ldf '#:let34)
-  (gcc-rap 2)
-  (gcc-rtn)
-  (gcc-label #:let34)
-  (gcc-ldc 42)
-  (gcc-ld 0 1)
-  (gcc-cons)
-  (gcc-rtn)
-  (gcc-label #:step12)
-  (gcc-ld 0 0)
-  (gcc-ldc 1)
-  (gcc-add)
-  (gcc-ld 1 0)
-  (gcc-cons)
-  (gcc-rtn))
+;;; if.gcc
+(gcc (if (> (+ 2 3) (- 6 1))
+         1
+         2)
+     (return))
