@@ -2,4 +2,4 @@
 
 (defpackage :icfp2014
   (:use :common-lisp :iterate :alexandria)
-  (:export :gcc))
+  (:export :gcc :ghc))

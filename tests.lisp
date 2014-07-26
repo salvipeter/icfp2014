@@ -1,5 +1,7 @@
 ;;; Sample programs
 
+;;; GCC tests
+
 ;;; local.gcc
 (gcc (body 21)
      (return)
@@ -78,3 +80,38 @@
            (if (= n 0)
                0
                (cons (car lst) (take (- n 1) (cdr lst)))))))
+
+
+;;; GHC tests
+
+;;; miner.ghc
+(ghc (mov a +down+)
+     (set-direction))
+
+;;; flipper
+(ghc (get-index)
+     (ghost-pos)
+     (and a 1)
+     (mov b a)
+     (mov a +down+)
+     (jeq _odd b 1)
+     (mov a +up+)
+     _odd
+     (set-direction))
+
+;;; flicker
+(ghc (mov a 255)
+     (mov b +up+)
+     (mov c 255)
+     _loop
+     (inc c)
+     (jgt _better [c] a)
+     (mov a [c])
+     (mov b c)
+     _better
+     (jlt _loop c +left+)
+     (mov a b)
+     (set-direction)
+     (get-index)
+     (ghost-direction)
+     (inc [b]))
