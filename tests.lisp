@@ -50,3 +50,31 @@
        (if (atom lst)
            lst
            (cons (fn (car lst)) (mapcar fn (cdr lst))))))
+
+;;; position test
+(gcc (position (cons 1 2) (cons (cons 3 4) (cons (cons 5 6) (cons (cons 1 2) (cons (cons 7 8) 0))))
+               pos=)
+     (return)
+     (def pos= (a b)
+       (and (= (car a) (car b))
+            (= (cdr a) (cdr b))))
+     (def and (a b)
+       (* a b))
+     (def position (item seq pred)
+       (let ((rec (lst n)
+               (if (atom lst)
+                   n
+                   (if (pred (car lst) item)
+                       n
+                       (rec (cdr lst) (+ n 1))))))
+         (rec seq 0))))
+
+;;; take test
+(gcc (take 3 (cons 1 (cons 2 (cons 3 (cons 4 (cons 5 (cons 6 0)))))))
+     (return)
+     (def take (n lst)
+       (if (atom lst)
+           0
+           (if (= n 0)
+               0
+               (cons (car lst) (take (- n 1) (cdr lst)))))))

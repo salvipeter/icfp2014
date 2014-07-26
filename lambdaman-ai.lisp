@@ -9,14 +9,16 @@
 
 ;;; GCC code starts
 
-(cons -1 step)
+(cons 0 step)
 (return)
 
-(def step (rev-dir world)
+(def step (visited world)
   (let* ((lman (cadr world))
          (xy (cadr lman))
-         (best (best-value-dir world xy rev-dir)))
-    (cons (reverse-dir best) best)))
+         (best (best-value-dir world xy visited))
+         (best-pos (movement xy best)))
+    (cons (cons best-pos (take 50 visited)) ; remember the last few positions
+          best)))
 
 (def cell (map xy)
   (nth (car xy) (nth (cdr xy) map)))
@@ -26,7 +28,7 @@
                      (and (> (cell map pos) +wall+)
                           (not (pos= pos prev))))
                    candidates)))
-(def best-value-dir (world xy rev-dir)
+(def best-value-dir (world xy visited)
   (let* ((map (car world))
          (ghosts (caddr world))
          (fruit (cdddr world))
@@ -35,13 +37,21 @@
                                      (> (cell map (movement xy dir)) +wall+))
                                    dirs))
          (candidates (mapcar (lambda (dir)
-                               (cons dir (+ (try-pos map ghosts fruit (movement xy dir))
-                                            (if (= dir rev-dir) -1 0))))
-                             not-walls)))
+                               (cons dir (try-pos map ghosts fruit (movement xy dir))))
+                             not-walls))
+         (best-value (reduce max (mapcar second candidates)))
+         (just-the-best (remove-if-not (lambda (dv) (= (cdr dv) best-value)) candidates)))
     ;; (debug candidates)
-    (first (reduce (lambda (a b)
-                     (if (> (cdr a) (cdr b)) a b))
-                   candidates))))
+    (if (atom (cdr just-the-best))
+        (car (car just-the-best))
+        (car (reduce (lambda (a b)
+                       (if (> (position (cdr a) visited pos=)
+                              (position (cdr b) visited pos=))
+                           a
+                           b))
+                     (mapcar (lambda (dv)
+                               (cons (car dv) (movement xy (car dv))))
+                             just-the-best))))))
 (def try-pos (map ghosts fruit pos)
   (let* ((ghost-positions (mapcar cadr ghosts))
          (ghost-vitalities (mapcar first ghosts))
@@ -125,6 +135,8 @@
 
 (def first (lst)
   (car lst))
+(def second (lst)
+  (cdr lst))
 (def cadr (lst)
   (car (cdr lst)))
 (def cddr (lst)
@@ -162,6 +174,20 @@
       (if (pred (car lst))
           1
           (any pred (cdr lst)))))
+(def position (item seq pred)
+  (let ((rec (lst n)
+          (if (atom lst)
+              n
+              (if (pred (car lst) item)
+                  n
+                  (rec (cdr lst) (+ n 1))))))
+    (rec seq 0)))
+(def take (n lst)
+  (if (atom lst)
+      0
+      (if (= n 0)
+          0
+          (cons (car lst) (take (- n 1) (cdr lst))))))
 
 ;;; GCC code ends
 
