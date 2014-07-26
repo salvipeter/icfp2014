@@ -81,6 +81,80 @@
 
 ;;; High-level programming constructs
 
+(defmacro defconstr (name args &body body)
+  `(defmacro ,(intern (format nil "GHC-~a" name)) ,args
+     `,`(progn ,@(mapcar #'prepend-ghc `,,@body))))
+
+(defconstr seq (&body body)
+  body)
+
+(defconstr jmp (where)
+  `((jeq ,where 0 0)))
+
+(defconstr if= (a b if-true if-false)
+  (let ((true (gensym "_TRUE"))
+        (endif (gensym "_ENDIF")))
+    `((jeq ,true ,a ,b)
+      ,@if-false
+      (jmp ,endif)
+      ,true
+      ,@if-true
+      ,endif)))
+
+(defconstr if< (a b if-true if-false)
+  (let ((true (gensym "_TRUE"))
+        (endif (gensym "_ENDIF")))
+    `((jlt ,true ,a ,b)
+      ,@if-false
+      (jmp ,endif)
+      ,true
+      ,@if-true
+      ,endif)))
+
+(defconstr if> (a b if-true if-false)
+  `((if< ,b ,a ,if-true ,if-false)))
+
+(defconstr if<= (a b if-true if-false)
+  `((if> ,a ,b ,if-false ,if-true)))
+
+(defconstr if>= (a b if-true if-false)
+  `((if< ,a ,b ,if-false ,if-true)))
+
+(defconstr unless= (a b &body body)
+  (let ((true (gensym "_TRUE")))
+    `((jeq ,true ,a ,b)
+      ,@body
+      ,true)))
+
+(defconstr when<= (a b &body body)
+  (let ((greater (gensym "_GREATER")))
+    `((jgt ,greater ,a ,b)
+      ,@body
+      ,greater)))
+
+(defconstr when>= (a b &body body)
+  (let ((less (gensym "_LESS")))
+    `((jlt ,less ,a ,b)
+      ,@body
+      ,less)))
+
+(defconstr when= (a b &body body)
+  `((if= ,a ,b ,body ())))
+
+(defconstr when< (a b &body body)
+  `((if< ,a ,b ,body ())))
+
+(defconstr when> (a b &body body)
+  `((if> ,a ,b ,body ())))
+
+(defconstr for (from below &body body)
+  (let ((label (gensym "_LOOP")))
+    `((mov c ,from)
+      ,label
+      ,@body
+      (inc c)
+      (jlt ,label c ,below))))
+
 
 ;;; Top-level macro
 

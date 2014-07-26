@@ -94,24 +94,33 @@
      (and a 1)
      (mov b a)
      (mov a +down+)
-     (jeq _odd b 1)
-     (mov a +up+)
-     _odd
+     (unless= b 1
+       (mov a +up+))
      (set-direction))
 
 ;;; flicker
 (ghc (mov a 255)
      (mov b +up+)
-     (mov c 255)
-     _loop
-     (inc c)
-     (jgt _better [c] a)
-     (mov a [c])
-     (mov b c)
-     _better
-     (jlt _loop c +left+)
+     (for 0 4
+       (when<= [c] a
+         (mov a [c])
+         (mov b c)))
      (mov a b)
      (set-direction)
      (get-index)
      (ghost-direction)
      (inc [b]))
+
+;;; if= test
+(ghc (mov a 1)
+     (if= a 1
+       ((mov a 2)
+        (mov b 3))
+       ((mov a 1)
+        (mov b 2))))
+
+;;; when> test
+(ghc (mov a 1)
+     (when> a 1
+       (inc a))
+     (mov b a))
