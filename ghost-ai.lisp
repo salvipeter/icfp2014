@@ -4,12 +4,11 @@
 ;; (fset 'ghost [?\M-> ?\C-x ?\C-e ?\C-x ?\C-x ?\C-x ?\C-f ?/ ?t ?m ?p ?/ ?g ?h ?o ?s ?t ?0 ?. ?g ?h ?c return ?\C-x ?h ?\M-w ?\C-x ?k return])
 
 ;;; Ideas:
-;;; - all of them should flee in fright mode
-;;; - all of them should chase lambdaman if he comes into view (n moves away)
-;;; - all of them should avoid other ghosts
-;;; - one guards power pills
-;;; - one guards the fruit position
-;;; - two wander aimlessly, selecting a good direction visited last
+;;; - all of them should chase lambdaman if he comes into view (e.g. n moves away)
+;;;   (or flee in fright mode)
+;;; - ghost0 (x2) wanders aimlessly, selecting a good direction visited last
+;;; - ghost1 guards power pills
+;;; - ghost2 guards the fruit position
 
 ;;; Notes:
 ;;; C is the loop counter
@@ -17,10 +16,11 @@
 ;;; [004]-[005] our coordinates
 ;;; [006]-[007] lambdaman's coordinates
 ;;; [010]-[017] candidate coordinates
+;;; [020]-[027] ghosts' coordinates
 ;;; [100]-[199] store the last visited positions
 ;;;             (x in the even, y in the odd addresses)
 ;;; [200]       stores the address of the last visited position
-;;;             (e.g. 118, the next one will be saved in 120, etc.)
+;;;             (e.g. 118[-119], the next one will be saved in 116[-117], etc.)
 ;;; [255]       reserved (always 0)
 
 (with-open-file (s "/tmp/ghost0.ghc" :direction :output :if-exists :supersede)
@@ -31,12 +31,22 @@
 
 ; Set [200] to 100 if this is the first time to run
 (when= [200] 0
-  (mov [200] 100))
+  (mov [200] 198))
 
 ; Get Lambda-Man's position
 (lman1-pos)
 (mov [6] a)
 (mov [7] b)
+
+; Save all ghost positions
+(mov d 20)
+(for 0 4
+  (mov a c)
+  (ghost-pos)
+  (mov [d] a)
+  (inc d)
+  (mov [d] b)
+  (inc d))
 
 ; Save our position
 (get-index)
@@ -58,7 +68,18 @@
 (dec [16])
 (mov [17] b)
 
-;;; Evaluate the candidates
+; Save the current position as visited
+; and update the last visited pointer
+(mov d [200])
+(mov [d] a)
+(inc d)
+(mov [d] b)
+(sub d 3)
+(when= d 98
+  (mov d 198))
+(mov [200] d)
+
+; Evaluate the candidates
 (mov d 0) ; candidate index
 (for 10 18
   (mov a [c])
@@ -80,7 +101,7 @@
 _next
   (inc d))
 
-;;; Set the reverse direction's score to 0
+; Set the reverse direction's score to 0
 (get-index)
 (ghost-direction)
 (if> b 1
@@ -88,14 +109,60 @@ _next
   ((add b 2)))
 (mov [b] 0)
 
-;;; Select the best direction
+; For those directions still in play (score /= 0),
+; modify the score based on the visited positions
+(mov a 10)                              ; [A]: candidate position (CP)
+(for 0 4
+  (mov d c)                             ; [D]: candidate direction score
+  (unless= [d] 0
+    (mov b [200])                       ; [B]: visited position (VP)
+    (add b 2)
+    (for 0 10                           ; C: distance (visited length is set here)
+      (when= b 200
+        (mov b 100))
+      (mov e [a])                       ; E: CPx
+      (mov g [b])                       ; G: VPx
+      (inc a)
+      (inc b)
+      (mov f [a])                       ; F: CPy
+      (mov h [b])                       ; H: VPy
+      (dec a)
+      (inc b)
+      (when= e g
+        (when= f h
+          (add [d] c)
+          (jmp _visited))))
+    (add [d] 50))
+_visited
+  (add a 2)
+  (mov c d))
+
+; Select the best direction
 (mov a 255)
 (for 0 4
-  (when> [c] [a]
+  (when>= [c] [a]
     (mov a c)))
-(when= a 255
-  (mov a 0)) ; no good move
 (set-direction)
+
+;; (get-index)
+;; (when= a 0
+;;   (mov h [200])
+;;   (mov a [h])
+;;   (inc h)
+;;   (mov b [h])
+;;   (inc h)
+;;   (mov c [h])
+;;   (inc h)
+;;   (mov d [h])
+;;   (inc h)
+;;   (mov e [h])
+;;   (inc h)
+;;   (mov f [h])
+;;   (inc h)
+;;   (mov g [h])
+;;   (inc h)
+;;   (mov h [h])
+;;   (debug))
 
 ;;; GHC code ends
 

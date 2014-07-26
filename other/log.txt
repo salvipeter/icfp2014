@@ -1,0 +1,13 @@
+Lightning round:
+2014.07.25. 14:00 - 2014.07.26. 14:00 (24 hours)
+Total time:
+2014.07.25. 14:00 - 2014.07.28. 14:00 (72 hours)
+
+My output:
+2014.07.25. 14:00-22:00 (8 hours)  : Lisp compiler on the Lambda-Man CPU
+2014.07.25. 22:00-00:30 (2.5 hours): Dumb Lambda-Man AI, utilities
+2014.07.26. 09:00-13:30 (4.5 hours): Better Lambda-Man AI, Lightning round submission
+2014.07.26. 14:00-17:30 (3.5 hours): Meta-assembler on the GHost CPU
+2014.07.26. 17:30-19:30 (2 hours)  : Dumb Ghost AI, utilities
+2014.07.26. 21:00-23:30 (2.5 hours): A bit smarter Ghost AI
+2014.07.27. 
