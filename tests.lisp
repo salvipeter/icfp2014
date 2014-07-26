@@ -88,7 +88,7 @@
 (ghc (mov a +down+)
      (set-direction))
 
-;;; flipper
+;;; flipper.ghc
 (ghc (get-index)
      (ghost-pos)
      (and a 1)
@@ -98,7 +98,7 @@
        (mov a +up+))
      (set-direction))
 
-;;; flicker
+;;; flicker.ghc
 (ghc (mov a 255)
      (mov b +up+)
      (for 0 4

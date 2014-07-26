@@ -163,12 +163,23 @@
       `(ghc-label ',expr)
       `(,(intern (format nil "GHC-~a" (first expr))) ,@(rest expr))))
 
+(defun expand (expr)
+  (cond ((atom expr) expr)
+        ((eq (first expr) 'progn)
+         `(progn ,@(iter (for subexpr in (rest expr))
+                         (collect (expand subexpr)))))
+        (t (multiple-value-bind (value expandedp)
+               (macroexpand expr)
+             (if expandedp
+                 (expand value)
+                 value)))))
+
 (defmacro ghc (&body body)
   (setf *counter* 0)
   (setf *labels* (make-hash-table :test 'equal))
-  (let ((complete-body `(,@(mapcar #'prepend-ghc body) (ghc-hlt))))
+  (let ((complete-body `(progn ,(expand (cons 'progn (mapcar #'prepend-ghc body))) (ghc-hlt))))
     `(progn
        (let ((*pass* 1))
-         ,@complete-body)
+         ,complete-body)
        (let ((*pass* 2))
-         ,@complete-body))))
+         ,complete-body))))
