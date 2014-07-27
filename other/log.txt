@@ -10,4 +10,13 @@ My output:
 2014.07.26. 14:00-17:30 (3.5 hours): Meta-assembler on the GHost CPU
 2014.07.26. 17:30-19:30 (2 hours)  : Dumb Ghost AI, utilities
 2014.07.26. 21:00-23:30 (2.5 hours): A bit smarter Ghost AI
-2014.07.27. 
+2014.07.27. 07:30-10:00 (2.5 hours): Quite smart Ghost AI
+
+first  day: 15.0/24 (63%)
+second day: 10.5/24 (44%)
+third  day: 00.0/24 (00%)
+
+Conclusion:
+Done more than a full day's worth of programming,
+but I'm not motivated enough to continue.
+A team of 2, maybe 3 members would have been ideal.
