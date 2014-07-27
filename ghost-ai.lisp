@@ -4,17 +4,16 @@
 ;; (fset 'ghost [?\M-> ?\C-x ?\C-e ?\C-x ?\C-x ?\C-x ?\C-f ?/ ?t ?m ?p ?/ ?g ?h ?o ?s ?t ?0 ?. ?g ?h ?c return ?\C-x ?h ?\M-w ?\C-x ?k return])
 
 ;;; Ideas:
-;;; - all of them should chase lambdaman if he comes into view (e.g. n moves away)
-;;;   (or flee in fright mode)
-;;; - ghost0 (x2) wanders aimlessly, selecting a good direction visited last
-;;; - ghost1 guards power pills
-;;; - ghost2 guards the fruit position
+;;; - all ghosts chase lambdaman (or flee in fright mode)
+;;; - ghost0 (x3) prefers pills/power pills, selects the direction visited last
+;;; - ghost1 guards the fruit position
 
 ;;; Notes:
 ;;; C is the loop counter
 ;;; [000]-[003] store the scores for directions (a score of 0 means we cannot go there)
 ;;; [004]-[005] our coordinates
 ;;; [006]-[007] lambdaman's coordinates
+;;; [008]-[009] fruit position
 ;;; [010]-[017] candidate coordinates
 ;;; [020]-[027] ghosts' coordinates
 ;;; [100]-[199] store the last visited positions
@@ -88,16 +87,20 @@
   ;; check whether this is where lambdaman is
   (when= a [6]
     (when= b [7]
-       (mov [d] 255)
+       (get-index)
+       (ghost-vitality)
+       (if= a +fright-mode+
+         ((mov [d] 0))
+         ((mov [d] 150)))
        (jmp _next)))
   (get-cell)
   (if= a +wall+
     ((mov [d] 0))
     ((if= a +pill+
-       ((mov [d] 5))
+       ((mov [d] 70))
        ((if= a +power-pill+
-          ((mov [d] 10))
-          ((mov [d] 1)))))))
+          ((mov [d] 80))
+          ((mov [d] 60)))))))
 _next
   (inc d))
 
@@ -137,32 +140,53 @@ _visited
   (add a 2)
   (mov c d))
 
+; For those directions still in play (score /= 0),
+; modify the score based on lambdaman's position
+(get-index)
+(ghost-vitality)
+(unless= [+up+] 0
+  (when> [5] [7]                        ; Gy > Ly
+    (if= a +fright-mode+
+      ((sub [+up+] 50))
+      ((add [+up+] 50))))
+  (when< [5] [7]                        ; Gy < Ly
+    (if= a +fright-mode+
+      ((add [+up+] 50))
+      ((sub [+up+] 50)))))
+(unless= [+right+] 0
+  (when< [4] [6]                        ; Gx < Lx
+    (if= a +fright-mode+
+      ((sub [+right+] 50))
+      ((add [+right+] 50))))
+  (when> [4] [6]                        ; Gx > Lx
+    (if= a +fright-mode+
+      ((add [+right+] 50))
+      ((sub [+right+] 50)))))
+(unless= [+down+] 0
+  (when< [5] [7]                        ; Gy < Ly
+    (if= a +fright-mode+
+      ((sub [+down+] 50))
+      ((add [+down+] 50))))
+  (when> [5] [7]                        ; Gy > Ly
+    (if= a +fright-mode+
+      ((add [+down+] 50))
+      ((sub [+down+] 50)))))
+(unless= [+left+] 0
+  (when> [4] [6]                        ; Gx > Lx
+    (if= a +fright-mode+
+      ((sub [+left+] 50))
+      ((add [+left+] 50))))
+  (when< [4] [6]                        ; Gx < Lx
+    (if= a +fright-mode+
+      ((add [+left+] 50))
+      ((sub [+left+] 50)))))
+
 ; Select the best direction
 (mov a 255)
 (for 0 4
   (when>= [c] [a]
     (mov a c)))
 (set-direction)
-
-;; (get-index)
-;; (when= a 0
-;;   (mov h [200])
-;;   (mov a [h])
-;;   (inc h)
-;;   (mov b [h])
-;;   (inc h)
-;;   (mov c [h])
-;;   (inc h)
-;;   (mov d [h])
-;;   (inc h)
-;;   (mov e [h])
-;;   (inc h)
-;;   (mov f [h])
-;;   (inc h)
-;;   (mov g [h])
-;;   (inc h)
-;;   (mov h [h])
-;;   (debug))
 
 ;;; GHC code ends
 

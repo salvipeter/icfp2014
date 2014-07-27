@@ -28,6 +28,10 @@
                          (for str = (format nil "~a" arg))
                          (cond ((char= (char str 0) (char str (1- (length str))) #\+)
                                 (collect arg))
+                               ((and (char= (char str 0) #\[) (char= (char str 1) #\+)
+                                     (char= (char str (- (length str) 2)) #\+))
+                                (collect `(format nil "[~a]"
+                                                  ,(intern (subseq str 1 (1- (length str)))))))
                                ((and (char= (char str 0) #\_))
                                 (collect `(ghc-lookup ',arg)))
                                (t (collect (list 'quote arg)))))))
